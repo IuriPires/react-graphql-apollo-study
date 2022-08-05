@@ -1,4 +1,4 @@
-import { AUTH_TOKEN } from '../constants';
+import { AUTH_TOKEN, LINKS_PER_PAGE } from '../constants';
 import { useMutation, gql } from  '@apollo/client';
 
 import { timeDifferenceForDate } from '../utils';
@@ -28,15 +28,26 @@ const Link = (props) => {
   const { link } = props;
   const authToken = localStorage.getItem(AUTH_TOKEN);
 
+
+  const take = LINKS_PER_PAGE;
+  const skip = 0;
+  const orderBy = { createdAt: 'desc' };
+
+
   const [vote] = useMutation(VOTE_MUTATION, {
     variables: {
       linkId: link.id
     },
     update: (cache, {data: {vote}}) => {
       const { feed } = cache.readQuery({
-        query: FEED_QUERY
+        query: FEED_QUERY,
+        variables: {
+          take,
+          skip,
+          orderBy
+        }
       });
-
+  
       const updatedLinks = feed.links.map((feedLink) => {
         if (feedLink.id === link.id) {
           return {
@@ -46,17 +57,23 @@ const Link = (props) => {
         }
         return feedLink;
       });
-
+  
       cache.writeQuery({
         query: FEED_QUERY,
         data: {
           feed: {
             links: updatedLinks
           }
+        },
+        variables: {
+          take,
+          skip,
+          orderBy
         }
       });
     }
   });
+  
 
   return (
     <div className="flex mt2 items-start">
